@@ -16,5 +16,5 @@ typeWriter();
 
 // Redirect after animation
 setTimeout(() => {
-  window.location.href = "pages/valentine.html";
+  window.location.href = "pages/envelope.html";
 }, 6500);
