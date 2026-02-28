@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Love Cards ❤️</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(255,182,193,0.7) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(255,105,135,0.5) 0%, transparent 55%),
+        radial-gradient(ellipse at 60% 10%, rgba(255,228,230,0.6) 0%, transparent 45%),
+        radial-gradient(ellipse at 10% 80%, rgba(255,150,170,0.4) 0%, transparent 45%),
+        linear-gradient(135deg, #fce4ec 0%, #f48ca6 50%, #e91e63 100%);
+      padding: 50px 30px 100px;
+    }
+
+    /* noise texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.55;
+      mix-blend-mode: overlay;
+    }
+
+    /* shimmer lines */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(255,255,255,0.04) 0px,
+        rgba(255,255,255,0.04) 1px,
+        transparent 1px,
+        transparent 10px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* bokeh */
+    .bokeh {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      animation: bokehFloat linear infinite;
+      filter: blur(40px);
+    }
+    @keyframes bokehFloat {
+      0%   { transform: translateY(0) scale(1); }
+      50%  { transform: translateY(-30px) scale(1.08); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    /* petals */
+    .petal {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1;
+      animation: petalFall linear forwards;
+      opacity: 0.75;
+    }
+    @keyframes petalFall {
+      0%   { transform: translateY(-60px) rotate(0deg); opacity: 0; }
+      10%  { opacity: 0.75; }
+      90%  { opacity: 0.5; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ── PAGE TITLE ── */
+    .page-title {
+      text-align: center;
+      position: relative;
+      z-index: 2;
+      margin-bottom: 40px;
+    }
+    .page-title h1 {
+      font-size: 36px;
+      color: white;
+      text-shadow: 0 2px 16px rgba(180,0,60,0.3);
+      letter-spacing: 1px;
+    }
+    .page-title p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.8);
+      margin-top: 6px;
+    }
+
+    /* ── CARDS GRID ── */
+    .cards-wrapper {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 30px;
+      max-width: 1100px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ── 3D FLIP CARD ── */
+    .card-container {
+      perspective: 1000px;
+      height: 360px;
+      cursor: pointer;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.75s cubic-bezier(0.4, 0.2, 0.2, 1);
+      border-radius: 20px;
+    }
+
+    .card-container:hover .card {
+      transform: translateY(-6px);
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg) translateY(-6px);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+    }
+
+    /* ── FRONT (text side — shown on load) ── */
+    .front {
+      background: linear-gradient(145deg, #fff0f4, #ffe0ea);
+      border: 2px solid rgba(255,160,185,0.4);
+      gap: 12px;
+    }
+
+    .front h3 {
+      font-size: 20px;
+      color: #c2185b;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .stamp {
+      margin-top: 6px;
+      padding: 6px 18px;
+      border: 3px solid #ff4d6d;
+      border-radius: 6px;
+      color: #ff4d6d;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      opacity: 0.6;
+      transform: rotate(-8deg);
+      text-transform: uppercase;
+    }
+
+    .front-icon {
+      font-size: 64px;
+      margin-bottom: 6px;
+      animation: iconPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.1); }
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #f48ca6;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+
+    /* card color accents */
+    .card1 .front-icon::before { content: '💕'; }
+    .card2 .front-icon::before { content: '💞'; }
+    .card3 .front-icon::before { content: '☀️'; }
+    .card4 .front-icon::before { content: '👑'; }
+    .card5 .front-icon::before { content: '🌈'; }
+    .card6 .front-icon::before { content: '♾️'; }
+
+    .card1 { border-top: 5px solid #ff4d6d; }
+    .card2 { border-top: 5px solid #e91e8c; }
+    .card3 { border-top: 5px solid #ff9800; }
+    .card4 { border-top: 5px solid #9c27b0; }
+    .card5 { border-top: 5px solid #2196f3; }
+    .card6 { border-top: 5px solid #e91e63; }
+
+    /* ── BACK (image side — shown on click) ── */
+    .back {
+      background: linear-gradient(145deg, #ff4d6d, #c2185b);
+      transform: rotateY(180deg);
+      gap: 14px;
+    }
+
+    .back h3 {
+      font-size: 19px;
+      color: white;
+      text-align: center;
+      font-weight: 700;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.2);
+    }
+
+    .card-img {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.6);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    /* placeholder when no image */
+    .card-img-placeholder {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(4px);
+    }
+
+    /* ── PROCEED BUTTON ── */
+    .proceed-wrap {
+      text-align: center;
+      margin-top: 50px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .proceed-btn {
+      padding: 16px 48px;
+      background: white;
+      color: #e91e63;
+      border: none;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(180,0,80,0.25);
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
+    }
+
+    .proceed-btn:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 16px 40px rgba(180,0,80,0.35);
+      background: #fff0f4;
+    }
+
+    .proceed-btn:active { transform: scale(0.98); }
+
+    /* entrance animation for cards */
+    .card-container {
+      animation: cardEntrance 0.5s ease both;
+    }
+    .card-container:nth-child(1) { animation-delay: 0.05s; }
+    .card-container:nth-child(2) { animation-delay: 0.15s; }
+    .card-container:nth-child(3) { animation-delay: 0.25s; }
+    .card-container:nth-child(4) { animation-delay: 0.35s; }
+    .card-container:nth-child(5) { animation-delay: 0.45s; }
+    .card-container:nth-child(6) { animation-delay: 0.55s; }
+
+    @keyframes cardEntrance {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-title">
+    <h1>For You, My Khanam 💖</h1>
+    <p>Click each card to reveal a surprise 🌸</p>
+  </div>
+
+  <div class="cards-wrapper">
+
+    <!-- Card 1 -->
+    <div class="card-container" onclick="flipCard(this)">
+      <div class="card">
+        <div class="card-face front card1">
+          <div class="front-icon card1"></div>
+          <h3>This is us 💕</h3>
+          <div class="stamp">ALWAYS</div>
+          <div class="hint">tap to open 💌</div>
+        </div>
+        <div class="card-face back">
+          <div class="card-img-placeholder">🥰</div>
+          <h3>I Love You Always ❤️</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="card-container" onclick="flipCard(this)">
+      <div class="card">
+        <div class="card-face front card2">
+          <div class="front-icon card2"></div>
+          <h3>Forever Yours 💞</h3>
+          <div class="stamp">LOVE</div>
+          <div class="hint">tap to open 💌</div>
+        </div>
+        <div class="card-face back">
+          <div class="card-img-placeholder">💑</div>
+          <h3>My Heart is Yours ❤️</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="card-container" onclick="flipCard(this)">
+      <div class="card">
+        <div class="card-face front card3">
+          <div class="front-icon card3"></div>
+          <h3>Always My Sunshine ☀️</h3>
+          <div class="stamp">SMILE</div>
+          <div class="hint">tap to open 💌</div>
+        </div>
+        <div class="card-face back">
+          <div class="card-img-placeholder">😍</div>
+          <h3>Your smile fixes everything 😍</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="card-container" onclick="flipCard(this)">
+      <div class="card">
+        <div class="card-face front card4">
+          <div class="front-icon card4"></div>
+          <h3>My Queen 👑</h3>
+          <div class="stamp">ROYAL</div>
+          <div class="hint">tap to open 💌</div>
+        </div>
+        <div class="card-face back">
+          <div class="card-img-placeholder">👸</div>
+          <h3>You rule my heart 💖</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="card-container" onclick="flipCard(this)">
+      <div class="card">
+        <div class="card-face front card5">
+          <div class="front-icon card5"></div>
+          <h3>My Happiness 🌈</h3>
+          <div class="stamp">JOY</div>
+          <div class="hint">tap to open 💌</div>
+        </div>
+        <div class="card-face back">
+          <div class="card-img-placeholder">🌈</div>
+          <h3>You make my life colorful ✨</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 6 -->
+    <div class="card-container" onclick="flipCard(this)">
+      <div class="card">
+        <div class="card-face front card6">
+          <div class="front-icon card6"></div>
+          <h3>Forever & Always ❤️</h3>
+          <div class="stamp">FOREVER</div>
+          <div class="hint">tap to open 💌</div>
+        </div>
+        <div class="card-face back">
+          <div class="card-img-placeholder">💍</div>
+          <h3>Only You ♾️</h3>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Proceed Button -->
+  <div class="proceed-wrap">
+    <button class="proceed-btn" onclick="window.location.href='next.html'">
+      Continue the Journey 💖 →
+    </button>
+  </div>
+
+  <script>
+    function flipCard(container) {
+      const card = container.querySelector('.card');
+      card.classList.toggle('flipped');
+    }
+
+    // ── BOKEH ──
+    (function(){
+      var colors=['#ff8fab','#ffb3c6','#ff4d6d','#ffd6e0','#ffccd5','#ff758f','#ffc2d1'];
+      for(var i=0;i<8;i++){
+        var b=document.createElement('div');
+        b.className='bokeh';
+        var size=80+Math.random()*300;
+        b.style.cssText='width:'+size+'px;height:'+size+'px;background:'+colors[i%colors.length]+';top:'+(Math.random()*100)+'%;left:'+(Math.random()*100)+'%;animation-duration:'+(7+Math.random()*10)+'s;animation-delay:-'+(Math.random()*8)+'s;opacity:'+(0.1+Math.random()*0.22)+';';
+        document.body.appendChild(b);
+      }
+    })();
+
+    // ── PETALS ──
+    (function(){
+      var petals=['🌸','🌺','🌹','💮','🌷','🍀'];
+      function create(){
+        var p=document.createElement('div');
+        p.className='petal';
+        p.textContent=petals[Math.floor(Math.random()*petals.length)];
+        p.style.left=(Math.random()*100)+'vw';
+        p.style.fontSize=(12+Math.random()*16)+'px';
+        var dur=6+Math.random()*9;
+        p.style.animationDuration=dur+'s';
+        document.body.appendChild(p);
+        setTimeout(function(){p.remove();create();},dur*1000);
+      }
+      for(var i=0;i<16;i++) setTimeout(create,Math.random()*9000);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #ffdde1, #ee9ca7);
+}
+
+/* Grid */
+.cards-wrapper {
+  width: 90vw;
+  height: 85vh;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 25px;
+}
+
+/* Card Container */
+.card-container {
+  perspective: 1200px;
+}
+
+.card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.7s ease;
+  cursor: pointer;
+}
+
+.card.flip {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  backface-visibility: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+  color: white;
+}
+
+.back {
+  background: linear-gradient(135deg, #ff758c, #ff7eb3);
+  transform: rotateY(180deg);
+}
+
+/* Card Colors */
+.card1 { background: linear-gradient(135deg, #ff9a9e, #fad0c4); }
+.card2 { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+.card3 { background: linear-gradient(135deg, #f6d365, #fda085); }
+.card4 { background: linear-gradient(135deg, #84fab0, #8fd3f4); }
+.card5 { background: linear-gradient(135deg, #cfd9df, #e2ebf0); color: #333; }
+.card6 { background: linear-gradient(135deg, #ff758c, #ff7eb3); }
+
+/* Image */
+.card-img {
+  width: 120px;       /* fixed width */
+  height: auto;       /* keep original PNG ratio */
+  margin-bottom: 15px;
+  object-fit: contain;
+  background: none;   /* no background */
+  box-shadow: none;   /* remove shadow if unwanted */
+}
+
+
+/* Stamp */
+.stamp {
+  margin-top: 15px;
+  border: 2px solid white;
+  padding: 6px 18px;
+  transform: rotate(-8deg);
+  font-weight: bold;
+  letter-spacing: 2px;
+}

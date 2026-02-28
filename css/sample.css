@@ -1,0 +1,124 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* TEXTURED BACKGROUND */
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+
+  background:
+    linear-gradient(135deg, #f7c6d0, #f48ca6),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.05) 0px,
+      rgba(255,255,255,0.05) 2px,
+      transparent 2px,
+      transparent 8px
+    );
+}
+
+.container {
+  perspective: 1500px;
+}
+
+.envelope {
+  position: relative;
+  width: 720px;
+  height: 460px;
+  background: #ff4d6d;
+  border-radius: 18px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+}
+
+.flap {
+  position: absolute;
+  width: 100%;
+  height: 240px;
+  background: #ff6b81;
+  clip-path: polygon(0 0, 50% 100%, 100% 0);
+  transform-origin: top;
+  transition: transform 1s ease;
+  z-index: 3;
+}
+
+.letter {
+  position: absolute;
+  width: 88%;
+  height: 380px;
+  background: #fff;
+  top: 40px;
+  left: 6%;
+  border-radius: 22px;
+  padding: 40px;
+  text-align: center;
+  transform: translateY(200px);
+  transition: all 1s ease;
+  opacity: 0;
+}
+
+.envelope.open .flap {
+  transform: rotateX(180deg);
+}
+
+.envelope.open .letter {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.slide {
+  display: none;
+}
+
+.slide.active {
+  display: block;
+}
+
+.next-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 30px;
+  padding: 10px 20px;
+  border: none;
+  background: #ff4d6d;
+  color: white;
+  border-radius: 30px;
+  cursor: pointer;
+}
+
+/* ROUND OPEN BUTTON */
+.open-btn {
+  position: absolute;
+  top: 180px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: none;
+  font-size: 30px;
+  cursor: pointer;
+  background: white;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  z-index: 4;
+}
+
+/* KISS SECTION */
+.kiss-section input {
+  padding: 8px 15px;
+  border-radius: 20px;
+  border: 2px solid #ff4d6d;
+  text-align: center;
+}
+
+.kiss-section label {
+  display: block;
+  margin-top: 8px;
+  color: red;
+}
