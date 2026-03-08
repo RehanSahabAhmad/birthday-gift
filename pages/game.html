@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ab Bahar Jao! 💕</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:   #ff4d6d;
+    --rose:   #c2185b;
+    --blush:  #fce4ec;
+    --deep:   #880e4f;
+    --peach:  #ffb3c6;
+    --cream:  #fff0f4;
+    --sky1:   #fce4ec;
+    --sky2:   #f48ca6;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Baloo 2', cursive;
+    background: linear-gradient(135deg, #fce4ec 0%, #f48ca6 50%, #e91e63 100%);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* noise texture */
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+    background-size:180px; opacity:.55; mix-blend-mode:overlay;
+  }
+
+  /* floating petals bg */
+  .petal-bg {
+    position:fixed; pointer-events:none; z-index:1;
+    animation: petalDrift linear forwards;
+    opacity:.6; font-size:18px;
+  }
+  @keyframes petalDrift {
+    0%   { transform:translateY(-40px) rotate(0deg); opacity:0; }
+    10%  { opacity:.6; }
+    90%  { opacity:.3; }
+    100% { transform:translateY(105vh) rotate(540deg); opacity:0; }
+  }
+
+  /* ── GAME WRAPPER ── */
+  #game-wrap {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* score bar */
+  #hud {
+    width: 520px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    background: rgba(255,255,255,0.35);
+    backdrop-filter: blur(8px);
+    border-radius: 16px 16px 0 0;
+    border: 2px solid rgba(255,255,255,0.5);
+    border-bottom: none;
+  }
+  #hud .score-txt { font-size:22px; font-weight:800; color:#880e4f; }
+  #hud .best-txt  { font-size:14px; color:#c2185b; font-weight:600; }
+  #hud .lives     { font-size:20px; letter-spacing:2px; }
+
+  /* canvas */
+  #gameCanvas {
+    display: block;
+    border: 3px solid rgba(255,255,255,0.6);
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 20px 60px rgba(180,0,80,0.3), 0 0 0 1px rgba(255,255,255,0.3);
+    background: #fce4ec;
+  }
+
+  /* ── SCREENS (overlay) ── */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    border-radius: 0 0 17px 17px;
+    background: rgba(252,228,236,0.92);
+    backdrop-filter: blur(6px);
+    z-index: 10;
+    animation: fadeIn .4s ease;
+  }
+  .screen.hidden { display:none; }
+  @keyframes fadeIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
+
+  .screen h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #880e4f;
+    text-align: center;
+    line-height: 1.25;
+    text-shadow: 0 2px 12px rgba(200,0,80,.15);
+    padding: 0 20px;
+  }
+  .screen p {
+    font-size: 16px;
+    color: #c2185b;
+    text-align: center;
+    padding: 0 30px;
+    font-weight: 600;
+  }
+  .screen .emoji-big { font-size: 52px; animation: bounce .9s infinite alternate; }
+  @keyframes bounce { from{transform:scale(1) translateY(0)} to{transform:scale(1.12) translateY(-8px)} }
+
+  .btn {
+    padding: 14px 40px;
+    background: linear-gradient(135deg, #ff4d6d, #c2185b);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 20px;
+    font-family: 'Baloo 2', cursive;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(194,24,91,.4), 0 3px 0 #880e4f;
+    transition: all .2s ease;
+    letter-spacing: .5px;
+  }
+  .btn:hover  { transform:translateY(-3px) scale(1.04); box-shadow:0 12px 32px rgba(194,24,91,.5); }
+  .btn:active { transform:scale(.97); }
+  .btn.secondary {
+    background: white;
+    color: #e91e63;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12), 0 3px 0 #ffb3c6;
+  }
+  .btn-row { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+
+  /* score display on game-over */
+  .score-display {
+    background: white;
+    border-radius: 18px;
+    padding: 16px 40px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(180,0,80,.15);
+  }
+  .score-display .big { font-size:52px; font-weight:800; color:#e91e63; line-height:1; }
+  .score-display .lbl { font-size:13px; color:#c2185b; letter-spacing:2px; text-transform:uppercase; margin-top:2px; }
+</style>
+</head>
+<body>
+
+<div id="game-wrap">
+  <div id="hud">
+    <div class="score-txt">💗 <span id="score-val">0</span></div>
+    <div class="lives" id="lives-val">❤️❤️❤️</div>
+    <div class="best-txt">Best: <span id="best-val">0</span></div>
+  </div>
+
+  <canvas id="gameCanvas" width="520" height="480"></canvas>
+
+  <!-- START SCREEN -->
+  <div class="screen" id="startScreen">
+    <div class="emoji-big">💌</div>
+    <h1>Ab Bahar Jaane Ke Liye<br>Game Khelo! 🎮</h1>
+    <p>Obstacles se bachke nikal jao<br>Score 100 pe tum free ho! 💕</p>
+    <p style="font-size:13px;color:#ad1457;">TAP / SPACEBAR = Jump &nbsp;|&nbsp; Score 10 per obstacle</p>
+    <button class="btn" onclick="startGame()">Play 💖</button>
+  </div>
+
+  <!-- DEAD SCREEN -->
+  <div class="screen hidden" id="deadScreen">
+    <div class="emoji-big">😵</div>
+    <h1>Oops! 💔</h1>
+    <div class="score-display">
+      <div class="big" id="dead-score">0</div>
+      <div class="lbl">Score</div>
+    </div>
+    <button class="btn" onclick="restartGame()">Try Again 🔄</button>
+  </div>
+
+  <!-- WIN SCREEN -->
+  <div class="screen hidden" id="winScreen">
+    <div style="font-size:48px;animation:bounce .9s infinite alternate;">🎉💕🎊</div>
+    <h1>Bahut Badiya!<br>Ab Ja Sakti Ho! 🚪💖</h1>
+    <div class="score-display">
+      <div class="big">100</div>
+      <div class="lbl">Perfect Score!</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn secondary" onclick="restartGame()">Play Again 🔄</button>
+      <button class="btn" onclick="window.location.href='next.html'">Next Page →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  SOUND ENGINE (Web Audio API — no files needed)
+// ─────────────────────────────────────────────
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type, duration, vol, startFreq) {
+  try {
+    const osc  = AC.createOscillator();
+    const gain = AC.createGain();
+    osc.connect(gain); gain.connect(AC.destination);
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(startFreq || freq, AC.currentTime);
+    if (startFreq) osc.frequency.exponentialRampToValueAtTime(freq, AC.currentTime + duration);
+    gain.gain.setValueAtTime(vol || 0.3, AC.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + duration);
+    osc.start(); osc.stop(AC.currentTime + duration);
+  } catch(e){}
+}
+
+function sfxJump()  { playTone(520, 'sine',   0.12, 0.25, 280); }
+function sfxScore() {
+  playTone(880, 'sine', 0.08, 0.3);
+  setTimeout(() => playTone(1100,'sine',0.08,0.3), 90);
+  setTimeout(() => playTone(1320,'sine',0.12,0.3), 180);
+}
+function sfxDead()  {
+  playTone(300, 'sawtooth', 0.08, 0.4);
+  setTimeout(() => playTone(200,'sawtooth',0.08,0.4), 90);
+  setTimeout(() => playTone(100,'sawtooth',0.15,0.4), 180);
+}
+function sfxWin()   {
+  [523,659,784,1047].forEach((f,i) =>
+    setTimeout(() => playTone(f,'sine',0.2,0.3), i*120)
+  );
+}
+function sfxFlap()  { playTone(400,'triangle',0.06,0.15,300); }
+
+function resumeAC() { if (AC.state === 'suspended') AC.resume(); }
+
+// ─────────────────────────────────────────────
+//  GAME STATE
+// ─────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const GROUND_H   = 70;
+const GROUND_Y   = H - GROUND_H;
+const BIRD_X     = 90;
+const GRAVITY    = 0.52;
+const JUMP_VEL   = -9.5;
+const WIN_SCORE  = 50;
+const MAX_LIVES  = 3;
+
+let bird, pipes, score, lives, speed, frameCount, gameState, best, animFrame;
+// gameState: 'idle' | 'playing' | 'dead' | 'win'
+
+// ─────────────────────────────────────────────
+//  OBSTACLE CHARACTERS (drawn on pipes)
+// ─────────────────────────────────────────────
+// Fun caricature faces drawn with canvas — no images needed
+const OBSTACLE_CHARS = [
+  { color:'#ff6b6b', label:'😤', hat:'👒' },
+  { color:'#ffd93d', label:'😠', hat:'🎩' },
+  { color:'#6bcb77', label:'🤬', hat:'👑' },
+  { color:'#4d96ff', label:'😡', hat:'🪖' },
+  { color:'#c77dff', label:'🙄', hat:'🎓' },
+];
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+function initGame() {
+  bird = {
+    x: BIRD_X, y: H/2 - 40,
+    vy: 0, radius: 22,
+    wingAngle: 0, frame: 0,
+  };
+  pipes    = [];
+  score    = 0;
+  lives    = MAX_LIVES;
+  speed    = 2.2;
+  frameCount = 0;
+  gameState  = 'playing';
+  best = parseInt(localStorage.getItem('ab-bahar-best') || '0');
+  updateHUD();
+}
+
+// ─────────────────────────────────────────────
+//  PIPE / OBSTACLE SPAWNER
+// ─────────────────────────────────────────────
+const PIPE_W    = 64;
+const PIPE_MINOPEN = 145;
+
+function getGap() {
+  // gap shrinks as score increases — easy → hard
+  const minGap = 115;
+  const maxGap = 175;
+  const factor = Math.max(0, (score / WIN_SCORE));
+  return Math.round(maxGap - (maxGap - minGap) * factor);
+}
+
+function spawnPipe() {
+  const gap   = getGap();
+  const minTopH = 55;
+  const maxTopH = GROUND_Y - gap - 55;
+  const topH   = minTopH + Math.floor(Math.random() * (maxTopH - minTopH));
+  const charIdx = Math.floor(Math.random() * OBSTACLE_CHARS.length);
+  pipes.push({
+    x: W + PIPE_W,
+    topH,
+    botY: topH + gap,
+    botH: GROUND_Y - (topH + gap),
+    passed: false,
+    char: OBSTACLE_CHARS[charIdx],
+    wobble: 0,
+  });
+}
+
+// ─────────────────────────────────────────────
+//  DRAW HELPERS
+// ─────────────────────────────────────────────
+
+// Pink gradient sky
+function drawBg() {
+  const sky = ctx.createLinearGradient(0,0,0,GROUND_Y);
+  sky.addColorStop(0,  '#fce4ec');
+  sky.addColorStop(0.4,'#f8bbd0');
+  sky.addColorStop(1,  '#f48ca6');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,W,GROUND_Y);
+
+  // soft bokeh blobs
+  const blobs = [
+    {x:60,y:80,r:80,a:.12},{x:260,y:50,r:100,a:.09},
+    {x:430,y:120,r:70,a:.1},{x:150,y:160,r:60,a:.07}
+  ];
+  blobs.forEach(b => {
+    const g = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r);
+    g.addColorStop(0,`rgba(255,255,255,${b.a})`);
+    g.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
+  });
+
+  // floating hearts in bg
+  ctx.font = '18px serif';
+  ctx.globalAlpha = 0.12;
+  const hearts = ['💗','💕','❤️','💖'];
+  for(let i=0;i<6;i++){
+    const hx = ((i*97 + frameCount*0.3) % (W+30)) - 15;
+    const hy = 30 + Math.sin(frameCount*0.02 + i*1.1)*30 + i*35;
+    ctx.fillText(hearts[i%4], hx, hy);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Petal-themed ground
+function drawGround() {
+  // grass strip — pink/rose themed
+  const gGrad = ctx.createLinearGradient(0,GROUND_Y,0,H);
+  gGrad.addColorStop(0,'#e91e63');
+  gGrad.addColorStop(0.3,'#c2185b');
+  gGrad.addColorStop(1,'#880e4f');
+  ctx.fillStyle = gGrad;
+  ctx.fillRect(0, GROUND_Y, W, GROUND_H);
+
+  // top edge highlight
+  ctx.fillStyle = '#ff80ab';
+  ctx.fillRect(0, GROUND_Y, W, 5);
+
+  // scrolling tile marks
+  const tileW = 40;
+  const offset = (frameCount * speed) % tileW;
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1.5;
+  for(let x = -offset; x < W; x += tileW) {
+    ctx.beginPath(); ctx.moveTo(x, GROUND_Y+5); ctx.lineTo(x, H); ctx.stroke();
+  }
+
+  // scrolling flowers
+  ctx.font = '16px serif';
+  ctx.globalAlpha = 0.5;
+  const flowerOffset = (frameCount * speed * 0.5) % 80;
+  for(let x = -flowerOffset; x < W+20; x += 80) {
+    ctx.fillText('🌸', x, GROUND_Y + 22);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Pipe with cartoon face on it
+function drawPipe(p) {
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.fillRect(p.x+5, 0, PIPE_W, p.topH);
+  ctx.fillRect(p.x+5, p.botY+4, PIPE_W, p.botH);
+
+  // top pipe body — gradient
+  const topGrad = ctx.createLinearGradient(p.x,0,p.x+PIPE_W,0);
+  topGrad.addColorStop(0,'#ff4d6d');
+  topGrad.addColorStop(0.4,'#ff8fa3');
+  topGrad.addColorStop(1,'#c2185b');
+  ctx.fillStyle = topGrad;
+  roundRect(ctx, p.x, 0, PIPE_W, p.topH, [0,0,12,12]);
+  ctx.fill();
+
+  // bottom pipe body
+  const botGrad = ctx.createLinearGradient(p.x,0,p.x+PIPE_W,0);
+  botGrad.addColorStop(0,'#ff4d6d');
+  botGrad.addColorStop(0.4,'#ff8fa3');
+  botGrad.addColorStop(1,'#c2185b');
+  ctx.fillStyle = botGrad;
+  roundRect(ctx, p.x, p.botY, PIPE_W, p.botH, [12,12,0,0]);
+  ctx.fill();
+
+  // pipe caps
+  ctx.fillStyle = '#e91e63';
+  roundRect(ctx, p.x-4, p.topH-18, PIPE_W+8, 20, 6);
+  ctx.fill();
+  roundRect(ctx, p.x-4, p.botY-2,  PIPE_W+8, 20, 6);
+  ctx.fill();
+
+  // highlight stripe
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillRect(p.x+8, 0, 10, p.topH-18);
+  ctx.fillRect(p.x+8, p.botY+18, 10, p.botH - 18);
+
+  // character face on bottom pipe cap
+  const fx = p.x + PIPE_W/2;
+  const fy = p.botY + 9;
+  // face circle
+  ctx.fillStyle = p.char.color;
+  ctx.beginPath(); ctx.arc(fx, fy, 14+Math.sin(p.wobble)*2, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.2)'; ctx.lineWidth=1.5; ctx.stroke();
+  // emoji face
+  ctx.font = '13px serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(p.char.label, fx, fy);
+
+  // top pipe face
+  const tfx = p.x + PIPE_W/2;
+  const tfy = p.topH - 9;
+  ctx.fillStyle = p.char.color;
+  ctx.beginPath(); ctx.arc(tfx, tfy, 14+Math.sin(p.wobble+1)*2, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.2)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.font = '13px serif';
+  ctx.fillText(p.char.hat, tfx, tfy);
+  ctx.textBaseline = 'alphabetic';
+}
+
+// Bird — heart-shaped love character
+function drawBird() {
+  ctx.save();
+  ctx.translate(bird.x, bird.y);
+  const tilt = Math.min(Math.max(bird.vy * 3.5, -35), 70);
+  ctx.rotate(tilt * Math.PI / 180);
+
+  const r = bird.radius;
+
+  // wing left
+  ctx.save();
+  ctx.rotate(-0.3 + Math.sin(bird.wingAngle)*0.6);
+  const wGrad = ctx.createLinearGradient(-r-14,-6,-r+4,6);
+  wGrad.addColorStop(0,'#ffccd5'); wGrad.addColorStop(1,'#ff8fa3');
+  ctx.fillStyle = wGrad;
+  ctx.beginPath();
+  ctx.ellipse(-r-6, 0, 16, 9, -0.3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // wing right
+  ctx.save();
+  ctx.rotate(0.3 - Math.sin(bird.wingAngle)*0.6);
+  const wGrad2 = ctx.createLinearGradient(r-4,-6,r+14,6);
+  wGrad2.addColorStop(0,'#ff8fa3'); wGrad2.addColorStop(1,'#ffccd5');
+  ctx.fillStyle = wGrad2;
+  ctx.beginPath();
+  ctx.ellipse(r+6, 0, 16, 9, 0.3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // body — heart shape
+  ctx.fillStyle = '#ff4d6d';
+  ctx.beginPath();
+  ctx.moveTo(0, r*0.6);
+  ctx.bezierCurveTo(-r*0.15, r*0.35, -r*1.05, r*0.1, -r*0.9, -r*0.3);
+  ctx.bezierCurveTo(-r*0.75, -r*0.75, 0, -r*0.5, 0, -r*0.1);
+  ctx.bezierCurveTo(0, -r*0.5, r*0.75, -r*0.75, r*0.9, -r*0.3);
+  ctx.bezierCurveTo(r*1.05, r*0.1, r*0.15, r*0.35, 0, r*0.6);
+  ctx.fill();
+
+  // shine
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.ellipse(-r*0.25, -r*0.25, r*0.25, r*0.15, -0.5, 0, Math.PI*2); ctx.fill();
+
+  // eyes
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(-r*0.28, -r*0.1, 5.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*0.28,  -r*0.1, 5.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#333';
+  ctx.beginPath(); ctx.arc(-r*0.26, -r*0.08, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*0.26,  -r*0.08, 3, 0, Math.PI*2); ctx.fill();
+  // eye shine
+  ctx.fillStyle='white';
+  ctx.beginPath(); ctx.arc(-r*0.22, -r*0.12, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*0.3,   -r*0.12, 1.5, 0, Math.PI*2); ctx.fill();
+
+  // smile
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.arc(0, r*0.12, r*0.25, 0.1, Math.PI-0.1);
+  ctx.stroke();
+
+  // rosy cheeks
+  ctx.fillStyle = 'rgba(255,150,170,0.45)';
+  ctx.beginPath(); ctx.ellipse(-r*0.45, r*0.08, 6, 4, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(r*0.45,  r*0.08, 6, 4, 0, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+// HUD score
+function updateHUD() {
+  document.getElementById('score-val').textContent = score;
+  document.getElementById('best-val').textContent  = best;
+  const livesArr = Array(MAX_LIVES).fill('❤️').map((_,i)=>i<lives?'❤️':'🖤').join('');
+  document.getElementById('lives-val').textContent = livesArr;
+}
+
+// rounded rect helper
+function roundRect(ctx, x, y, w, h, r) {
+  const [tl,tr,br,bl] = Array.isArray(r)?r:[r,r,r,r];
+  ctx.beginPath();
+  ctx.moveTo(x+tl,y);
+  ctx.lineTo(x+w-tr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+tr);
+  ctx.lineTo(x+w,y+h-br); ctx.quadraticCurveTo(x+w,y+h,x+w-br,y+h);
+  ctx.lineTo(x+bl,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-bl);
+  ctx.lineTo(x,y+tl); ctx.quadraticCurveTo(x,y,x+tl,y);
+  ctx.closePath();
+}
+
+// Particle system
+let particles = [];
+function spawnParticles(x, y, color, count) {
+  for(let i=0;i<count;i++){
+    const angle = Math.random()*Math.PI*2;
+    const spd   = 2+Math.random()*4;
+    particles.push({
+      x,y,
+      vx: Math.cos(angle)*spd,
+      vy: Math.sin(angle)*spd - 2,
+      life: 1, text: ['💗','💕','✨','💖'][Math.floor(Math.random()*4)],
+      size: 14+Math.random()*10,
+    });
+  }
+}
+function updateParticles() {
+  particles = particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.2; p.life-=0.04;
+    ctx.globalAlpha=p.life;
+    ctx.font=`${p.size}px serif`;
+    ctx.textAlign='center';
+    ctx.fillText(p.text,p.x,p.y);
+  });
+  ctx.globalAlpha=1; ctx.textAlign='left';
+}
+
+// ─────────────────────────────────────────────
+//  COLLISION
+// ─────────────────────────────────────────────
+function checkCollision() {
+  const bx = bird.x, by = bird.y, br = bird.radius - 4;
+  // ground / ceiling
+  if (by + br >= GROUND_Y || by - br <= 0) return true;
+  // pipes
+  for(const p of pipes){
+    if(bx+br > p.x+4 && bx-br < p.x+PIPE_W-4){
+      if(by-br < p.topH || by+br > p.botY) return true;
+    }
+  }
+  return false;
+}
+
+// ─────────────────────────────────────────────
+//  GAME LOOP
+// ─────────────────────────────────────────────
+let pipeSpawnTimer = 0;
+const PIPE_INTERVAL_BASE = 105;
+
+function getSpawnInterval() {
+  // pipes come faster as score grows
+  return Math.max(68, PIPE_INTERVAL_BASE - Math.floor(score/20)*8);
+}
+
+function gameLoop() {
+  if(gameState !== 'playing') return;
+  frameCount++;
+
+  ctx.clearRect(0,0,W,H);
+  drawBg();
+
+  // speed ramp (subtle, smooth)
+  speed = 2.2 + (score / WIN_SCORE) * 2.0;
+
+  // ── BIRD physics ──
+  bird.vy += GRAVITY;
+  bird.y  += bird.vy;
+  bird.wingAngle += 0.25;
+
+  // ── PIPES ──
+  pipeSpawnTimer++;
+  if(pipeSpawnTimer >= getSpawnInterval()){
+    spawnPipe();
+    pipeSpawnTimer = 0;
+  }
+
+  pipes.forEach(p => {
+    p.x -= speed;
+    p.wobble += 0.08;
+    // score
+    if(!p.passed && p.x + PIPE_W < bird.x){
+      p.passed = true;
+      score += 10;
+      sfxScore();
+      spawnParticles(bird.x, bird.y, '#ff4d6d', 8);
+      updateHUD();
+      if(score >= WIN_SCORE){ endWin(); return; }
+    }
+  });
+  pipes = pipes.filter(p => p.x + PIPE_W > -10);
+
+  // draw pipes
+  pipes.forEach(drawPipe);
+
+  drawGround();
+
+  // collision
+  if(checkCollision()){
+    sfxDead();
+    lives--;
+    updateHUD();
+    if(lives <= 0){
+      gameState = 'dead';
+      if(score > best){ best = score; localStorage.setItem('ab-bahar-best',best); }
+      spawnParticles(bird.x, bird.y, '#ff4d6d', 16);
+      setTimeout(()=>showDead(), 400);
+    } else {
+      // respawn with brief flash
+      bird.y  = H/2 - 40;
+      bird.vy = 0;
+      pipes   = [];
+      pipeSpawnTimer = 0;
+      // flash screen red
+      ctx.fillStyle='rgba(255,0,0,0.25)';
+      ctx.fillRect(0,0,W,H);
+    }
+  }
+
+  // draw bird
+  drawBird();
+  // particles
+  updateParticles();
+
+  // score progress bar at top of canvas
+  ctx.fillStyle='rgba(255,255,255,0.2)';
+  ctx.fillRect(0,0,W,6);
+  ctx.fillStyle='#ff4d6d';
+  ctx.fillRect(0,0,(score/WIN_SCORE)*W,6);
+
+  // difficulty indicator
+  ctx.fillStyle='rgba(136,14,79,0.45)';
+  ctx.font='11px Baloo 2, cursive';
+  ctx.textAlign='right';
+  const lvl = score<30?'Easy 😊':score<60?'Medium 😅':score<90?'Hard 😤':'Almost! 🔥';
+  ctx.fillText(lvl, W-8, 22);
+  ctx.textAlign='left';
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function endWin() {
+  gameState = 'win';
+  sfxWin();
+  spawnParticles(bird.x, bird.y, '#ff4d6d', 20);
+  if(score > best){ best = score; localStorage.setItem('ab-bahar-best',best); }
+  setTimeout(()=>{
+    document.getElementById('winScreen').classList.remove('hidden');
+  },600);
+}
+function showDead(){
+  document.getElementById('dead-score').textContent = score;
+  document.getElementById('deadScreen').classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────
+//  CONTROLS
+// ─────────────────────────────────────────────
+function jump() {
+  resumeAC();
+  if(gameState === 'playing'){
+    bird.vy = JUMP_VEL;
+    sfxJump();
+    sfxFlap();
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if(e.code==='Space'||e.code==='ArrowUp') { e.preventDefault(); jump(); }
+});
+canvas.addEventListener('click', () => jump());
+canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, {passive:false});
+
+// ─────────────────────────────────────────────
+//  START / RESTART
+// ─────────────────────────────────────────────
+function startGame() {
+  resumeAC();
+  document.getElementById('startScreen').classList.add('hidden');
+  initGame();
+  // draw one idle frame before starting
+  ctx.clearRect(0,0,W,H); drawBg(); drawGround();
+  gameLoop();
+}
+
+function restartGame() {
+  resumeAC();
+  cancelAnimationFrame(animFrame);
+  document.getElementById('deadScreen').classList.add('hidden');
+  document.getElementById('winScreen').classList.add('hidden');
+  particles = [];
+  pipes = [];
+  pipeSpawnTimer = 0;
+  initGame();
+  gameLoop();
+}
+
+// ─────────────────────────────────────────────
+//  IDLE ANIMATION (before start)
+// ─────────────────────────────────────────────
+function idleLoop() {
+  if(gameState !== 'idle') return;
+  frameCount++;
+  ctx.clearRect(0,0,W,H);
+  drawBg();
+  // idle bird bobbing on screen
+  bird.x  = BIRD_X;
+  bird.y  = H/2 - 30 + Math.sin(frameCount*0.05)*18;
+  bird.vy = Math.cos(frameCount*0.05)*2;
+  bird.wingAngle += 0.18;
+  drawGround();
+  drawBird();
+  requestAnimationFrame(idleLoop);
+}
+// kick off idle
+bird = { x:BIRD_X, y:H/2-30, vy:0, radius:22, wingAngle:0, frame:0 };
+score=0; lives=MAX_LIVES; frameCount=0; gameState='idle';
+best = parseInt(localStorage.getItem('ab-bahar-best')||'0');
+document.getElementById('best-val').textContent = best;
+idleLoop();
+
+// ─────────────────────────────────────────────
+//  BACKGROUND PETALS
+// ─────────────────────────────────────────────
+(function(){
+  const emojis=['🌸','🌺','💮','🌷','💗'];
+  function mk(){
+    const d=document.createElement('div');
+    d.className='petal-bg';
+    d.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    d.style.left=(Math.random()*100)+'vw';
+    d.style.fontSize=(11+Math.random()*14)+'px';
+    const dur=7+Math.random()*9;
+    d.style.animationDuration=dur+'s';
+    d.style.animationDelay=(Math.random()*4)+'s';
+    document.body.appendChild(d);
+    setTimeout(()=>{d.remove();mk();},( dur+4)*1000);
+  }
+  for(let i=0;i<14;i++) setTimeout(mk,Math.random()*8000);
+})();
+</script>
+</body>
+</html>
