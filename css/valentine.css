@@ -1,16 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&family=Poppins:wght@400;600&display=swap');
+
+/* ══════════════════════════════════════════
+   RESET
+══════════════════════════════════════════ */
 * {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
 }
+
+/* ══════════════════════════════════════════
+   BODY — pink/rose/blush theme (matches
+   envelope, cards, mixtape pages)
+══════════════════════════════════════════ */
 body {
   display: grid;
   justify-content: center;
   align-items: center;
-  background: white;
+  min-height: 100vh;
+  overflow: hidden;
   font-family: "Quicksand", sans-serif;
+
+  /* ── layered gradient background ── */
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(255,182,193,0.75) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(255,105,135,0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at 60% 10%, rgba(255,228,230,0.65) 0%, transparent 45%),
+    radial-gradient(ellipse at 10% 80%, rgba(255,150,170,0.45) 0%, transparent 45%),
+    linear-gradient(135deg, #fce4ec 0%, #f48ca6 50%, #e91e63 100%);
 }
-.container {  
+
+/* ── noise texture overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+  background-size: 180px;
+  opacity: 0.55;
+  mix-blend-mode: overlay;
+}
+
+/* ── diagonal shimmer lines ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255,255,255,0.03) 0px,
+    rgba(255,255,255,0.03) 1px,
+    transparent 1px,
+    transparent 10px
+  );
+}
+
+/* ══════════════════════════════════════════
+   BOKEH BLOBS  (injected by JS — see below)
+   Add this to your JS:
+
+   (function(){
+     const cols=['#ff8fab','#ffb3c6','#ff4d6d','#ffd6e0','#ffccd5'];
+     for(let i=0;i<8;i++){
+       const b=document.createElement('div');
+       b.className='bokeh';
+       const s=80+Math.random()*280;
+       b.style.cssText=
+         'width:'+s+'px;height:'+s+'px;background:'+cols[i%5]+';'
+         +'top:'+Math.random()*100+'%;left:'+Math.random()*100+'%;'
+         +'animation-duration:'+(7+Math.random()*10)+'s;'
+         +'animation-delay:-'+(Math.random()*8)+'s;'
+         +'opacity:'+(0.1+Math.random()*0.2)+';';
+       document.body.appendChild(b);
+     }
+   })();
+
+══════════════════════════════════════════ */
+.bokeh {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(40px);
+  animation: bokehFloat ease-in-out infinite alternate;
+}
+@keyframes bokehFloat {
+  from { transform: translateY(0) scale(1); }
+  to   { transform: translateY(-28px) scale(1.07); }
+}
+
+/* ══════════════════════════════════════════
+   FALLING PETALS  (injected by JS — see below)
+   Add this to your JS:
+
+   (function(){
+     const em=['🌸','🌺','🌹','💮','🌷','💗'];
+     function mk(){
+       const d=document.createElement('div');
+       d.className='petal';
+       d.textContent=em[Math.floor(Math.random()*em.length)];
+       d.style.left=Math.random()*100+'vw';
+       d.style.fontSize=(11+Math.random()*13)+'px';
+       const dur=6+Math.random()*9;
+       d.style.animationDuration=dur+'s';
+       document.body.appendChild(d);
+       setTimeout(()=>{d.remove();mk();},(dur+0.5)*1000);
+     }
+     for(let i=0;i<16;i++) setTimeout(mk, Math.random()*7000);
+   })();
+
+══════════════════════════════════════════ */
+.petal {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1;
+  animation: petalFall linear forwards;
+  opacity: 0.7;
+}
+@keyframes petalFall {
+  0%   { transform: translateY(-50px) rotate(0deg);   opacity: 0;   }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.4; }
+  100% { transform: translateY(105vh) rotate(600deg); opacity: 0;   }
+}
+
+/* ══════════════════════════════════════════
+   CONTAINERS  (z-index raised above overlays)
+══════════════════════════════════════════ */
+.container {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -20,6 +141,7 @@ body {
   -webkit-transform: translate(-50%, -50%);
   -moz-transform: translate(-100%, -50%);
   transition: 0.2s;
+  z-index: 5;   /* sits above bokeh (z:0) and petals (z:1) */
 }
 
 .question-container {
@@ -27,53 +149,92 @@ body {
   top: 40%;
   left: 50%;
   transition: 0.2s;
+  z-index: 5;
+  text-align: center;
 }
+
+/* ══════════════════════════════════════════
+   GIF / VIDEO
+══════════════════════════════════════════ */
 .local-gif {
   width: 100%;
   max-width: 300px;
-  border-radius: 10px;
+  border-radius: 16px;
   display: block;
   margin: 0 auto 3rem auto;
   pointer-events: none;
+  box-shadow: 0 12px 32px rgba(180, 0, 80, 0.2);
 }
+
+/* ══════════════════════════════════════════
+   QUESTION TEXT
+══════════════════════════════════════════ */
 .question {
   font-size: 2rem;
+  font-weight: 700;
   margin-bottom: 1rem;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(136, 14, 79, 0.4), 0 1px 3px rgba(0,0,0,0.15);
 }
+
+/* ══════════════════════════════════════════
+   BUTTON CONTAINER
+══════════════════════════════════════════ */
 .button-container {
   display: flex;
   justify-content: center;
   gap: 1.5rem;
 }
+
+/* ══════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════ */
 .btn {
   position: absolute;
   border: none;
   border-radius: 50px;
-  padding: 14px 24px;
+  padding: 14px 28px;
   font-family: "Poppins", sans-serif;
   font-size: 18px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background-color: #ff54a4;
-  color: white;
-  transform: scale(1.05);
-  box-shadow: 0px 4px 15px
-   rgba(255, 107, 129, 0.5);
-}
-.btn:hover {
-  background-color: #ffa4b1;
-  transform: scale(1.1);
-  box-shadow: 0px 6px 20px rgba(255, 107, 129, 0.7);
-  text-shadow: 1px 1px 5px rgba(255, 182, 193, 0.8);
+  transition: all 0.25s ease;
+  z-index: 10;
 }
 
+/* YES button — rose gradient */
 .yes-btn {
   right: 54%;
+  background: linear-gradient(135deg, #ff4d6d, #c2185b);
+  color: white;
+  box-shadow: 0 8px 24px rgba(194, 24, 91, 0.42), 0 3px 0 #880e4f;
+  transform: scale(1.05);
 }
-.no-btn {
-  left: 54%;
+.yes-btn:hover {
+  transform: scale(1.12) translateY(-3px);
+  box-shadow: 0 12px 32px rgba(194, 24, 91, 0.55);
+}
+.yes-btn:active {
+  transform: scale(0.97);
 }
 
+/* NO button — white pill */
+.no-btn {
+  left: 54%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #c2185b;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1), 0 3px 0 #ffb3c6;
+  transform: scale(1.05);
+}
+.no-btn:hover {
+  background: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 8px 24px rgba(194, 24, 91, 0.2);
+}
+
+/* ══════════════════════════════════════════
+   RESULT CONTAINER
+══════════════════════════════════════════ */
 .result-container {
   display: none;
   position: absolute;
@@ -85,17 +246,33 @@ body {
   -webkit-transform: translate(-50%, -50%);
   -moz-transform: translate(-100%, -50%);
   transition: 0.2s;
-}
-.gif-result {
-  border-radius: 10px;
-  margin-bottom: 2rem;
-}
-.result-container h2 {
-  font-size: 3.2rem;
+  z-index: 5;
   text-align: center;
 }
 
-/* heart loader */
+.gif-result {
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  box-shadow: 0 12px 32px rgba(180, 0, 80, 0.2);
+}
+
+.result-container h2 {
+  font-size: 3.2rem;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 2px 20px rgba(136, 14, 79, 0.45), 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.iknow{
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 2px 20px rgba(136, 14, 79, 0.45), 0 1px 3px rgba(0,0,0,0.15);
+  padding-bottom: 50px;
+}
+
+/* ══════════════════════════════════════════
+   HEART LOADER
+══════════════════════════════════════════ */
 .cssload-main {
   display: none;
   position: absolute;
@@ -108,6 +285,7 @@ body {
   -ms-transform: translate(-100%, -240%);
   -webkit-transform: translate(-100%, -240%);
   -moz-transform: translate(-100%, -240%);
+  z-index: 5;
 }
 
 .cssload-main * {
@@ -116,14 +294,7 @@ body {
 
 .cssload-heart {
   animation: cssload-heart 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
-  -o-animation: cssload-heart 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -ms-animation: cssload-heart 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -webkit-animation: cssload-heart 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -moz-animation: cssload-heart 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
+  -webkit-animation: cssload-heart 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
   top: 50%;
   content: "";
   left: 50%;
@@ -133,75 +304,45 @@ body {
 .cssload-heartL {
   width: 1em;
   height: 1em;
-  border: 1px solid #ff0000;
-  background-color: #ff0000;
+  border: 1px solid #ff4d6d;       /* ← changed from red to rose pink */
+  background-color: #ff4d6d;
   content: "";
   position: absolute;
   display: block;
   border-radius: 100%;
   animation: cssload-heartL 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
-  -o-animation: cssload-heartL 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -ms-animation: cssload-heartL 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -webkit-animation: cssload-heartL 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -moz-animation: cssload-heartL 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
+  -webkit-animation: cssload-heartL 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
   transform: translate(-28px, -27px);
-  -o-transform: translate(-28px, -27px);
-  -ms-transform: translate(-28px, -27px);
   -webkit-transform: translate(-28px, -27px);
-  -moz-transform: translate(-28px, -27px);
 }
 
 .cssload-heartR {
   width: 1em;
   height: 1em;
-  border: 1px solid #ff0000;
-  background-color: #ff0000;
+  border: 1px solid #ff4d6d;
+  background-color: #ff4d6d;
   content: "";
   position: absolute;
   display: block;
   border-radius: 100%;
   transform: translate(28px, -27px);
-  -o-transform: translate(28px, -27px);
-  -ms-transform: translate(28px, -27px);
   -webkit-transform: translate(28px, -27px);
-  -moz-transform: translate(28px, -27px);
   animation: cssload-heartR 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
-  -o-animation: cssload-heartR 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -ms-animation: cssload-heartR 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -webkit-animation: cssload-heartR 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -moz-animation: cssload-heartR 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
+  -webkit-animation: cssload-heartR 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
 }
 
 .cssload-square {
   width: 1em;
   height: 1em;
-  border: 1px solid #ff0000;
-  background-color: #ff0000;
+  border: 1px solid #ff4d6d;
+  background-color: #ff4d6d;
   position: relative;
   display: block;
   content: "";
   transform: scale(1) rotate(-45deg);
-  -o-transform: scale(1) rotate(-45deg);
-  -ms-transform: scale(1) rotate(-45deg);
   -webkit-transform: scale(1) rotate(-45deg);
-  -moz-transform: scale(1) rotate(-45deg);
   animation: cssload-square 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
-  -o-animation: cssload-square 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -ms-animation: cssload-square 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -webkit-animation: cssload-square 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -moz-animation: cssload-square 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
+  -webkit-animation: cssload-square 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
 }
 
 .cssload-shadow {
@@ -213,206 +354,161 @@ body {
   bottom: -0.5em;
   width: 1em;
   height: 0.24em;
-  background-color: rgb(215, 215, 215);
-  border: 1px solid rgb(215, 215, 215);
+  background-color: rgba(255, 200, 215, 0.6);   /* ← softened to match theme */
+  border: 1px solid rgba(255, 200, 215, 0.6);
   border-radius: 50%;
   animation: cssload-shadow 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
-  -o-animation: cssload-shadow 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -ms-animation: cssload-shadow 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -webkit-animation: cssload-shadow 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
-  -moz-animation: cssload-shadow 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite
-    normal;
+  -webkit-animation: cssload-shadow 2.88s cubic-bezier(0.75, 0, 0.5, 1) infinite normal;
+}
+/* ══════════════════════════════════════════
+   PROCEED BUTTON — matches envelope theme
+   Usage:
+     <button class="proceed-btn" onclick="window.location.href='next.html'">
+       Proceed Next 💖
+     </button>
+══════════════════════════════════════════ */
+
+.proceed-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 15px 48px;
+
+  /* rose gradient fill */
+  background: linear-gradient(135deg, #ff4d6d 0%, #c2185b 100%);
+  color: #ffffff;
+
+  border: none;
+  border-radius: 50px;          /* full pill shape */
+
+  font-family: 'Nunito', 'Quicksand', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  /* depth shadow + bottom press edge */
+  box-shadow:
+    0 8px 28px rgba(194, 24, 91, 0.42),
+    0 3px 0px #880e4f;
+
+  /* smooth transitions */
+  transition:
+    transform   0.22s cubic-bezier(.34,1.56,.64,1),
+    box-shadow  0.22s ease,
+    background  0.22s ease;
+
+  /* sits above background overlays */
+  position: relative;
+  z-index: 10;
 }
 
+/* shimmer sweep on hover */
+.proceed-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50px;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 65%
+  );
+  background-size: 200% 100%;
+  background-position: -100% 0;
+  transition: background-position 0.5s ease;
+}
+.proceed-btn:hover::after {
+  background-position: 200% 0;
+}
+
+/* hover — lift + stronger glow */
+.proceed-btn:hover {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow:
+    0 14px 36px rgba(194, 24, 91, 0.52),
+    0 3px 0px #880e4f;
+}
+
+/* active — press down */
+.proceed-btn:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow:
+    0 4px 14px rgba(194, 24, 91, 0.35),
+    0 1px 0px #880e4f;
+}
+
+/* focus ring for accessibility */
+.proceed-btn:focus-visible {
+  outline: 3px solid rgba(255, 77, 109, 0.5);
+  outline-offset: 4px;
+}
+
+
+/* ── VARIANT: white/ghost button (for dark bg use) ── */
+.proceed-btn.ghost {
+  background: rgba(255, 255, 255, 0.92);
+  color: #c2185b;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.10),
+    0 3px 0px #ffb3c6;
+}
+.proceed-btn.ghost:hover {
+  background: #ffffff;
+  box-shadow:
+    0 14px 32px rgba(194, 24, 91, 0.18),
+    0 3px 0px #ffb3c6;
+}
+.proceed-btn.ghost:active {
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.08),
+    0 1px 0px #ffb3c6;
+}
+
+/* ══════════════════════════════════════════
+   HEART LOADER KEYFRAMES  (unchanged logic,
+   just keeping all vendor prefixes)
+══════════════════════════════════════════ */
 @keyframes cssload-square {
-  50% {
-    border-radius: 100%;
-    transform: scale(0.5) rotate(-45deg);
-  }
-  100% {
-    transform: scale(1) rotate(-45deg);
-  }
+  50%  { border-radius: 100%; transform: scale(0.5) rotate(-45deg); }
+  100% { transform: scale(1) rotate(-45deg); }
 }
-
-@-o-keyframes cssload-square {
-  50% {
-    border-radius: 100%;
-    -o-transform: scale(0.5) rotate(-45deg);
-  }
-  100% {
-    -o-transform: scale(1) rotate(-45deg);
-  }
-}
-
-@-ms-keyframes cssload-square {
-  50% {
-    border-radius: 100%;
-    -ms-transform: scale(0.5) rotate(-45deg);
-  }
-  100% {
-    -ms-transform: scale(1) rotate(-45deg);
-  }
-}
-
 @-webkit-keyframes cssload-square {
-  50% {
-    border-radius: 100%;
-    -webkit-transform: scale(0.5) rotate(-45deg);
-  }
-  100% {
-    -webkit-transform: scale(1) rotate(-45deg);
-  }
-}
-
-@-moz-keyframes cssload-square {
-  50% {
-    border-radius: 100%;
-    -moz-transform: scale(0.5) rotate(-45deg);
-  }
-  100% {
-    -moz-transform: scale(1) rotate(-45deg);
-  }
+  50%  { border-radius: 100%; -webkit-transform: scale(0.5) rotate(-45deg); }
+  100% { -webkit-transform: scale(1) rotate(-45deg); }
 }
 
 @keyframes cssload-heart {
-  50% {
-    transform: rotate(360deg);
-  }
-  100% {
-    transform: rotate(720deg);
-  }
+  50%  { transform: rotate(360deg); }
+  100% { transform: rotate(720deg); }
 }
-
-@-o-keyframes cssload-heart {
-  50% {
-    -o-transform: rotate(360deg);
-  }
-  100% {
-    -o-transform: rotate(720deg);
-  }
-}
-
-@-ms-keyframes cssload-heart {
-  50% {
-    -ms-transform: rotate(360deg);
-  }
-  100% {
-    -ms-transform: rotate(720deg);
-  }
-}
-
 @-webkit-keyframes cssload-heart {
-  50% {
-    -webkit-transform: rotate(360deg);
-  }
-  100% {
-    -webkit-transform: rotate(720deg);
-  }
-}
-
-@-moz-keyframes cssload-heart {
-  50% {
-    -moz-transform: rotate(360deg);
-  }
-  100% {
-    -moz-transform: rotate(720deg);
-  }
+  50%  { -webkit-transform: rotate(360deg); }
+  100% { -webkit-transform: rotate(720deg); }
 }
 
 @keyframes cssload-heartL {
-  60% {
-    transform: scale(0.4);
-  }
+  60% { transform: scale(0.4) translate(-28px, -27px); }
 }
-
-@-o-keyframes cssload-heartL {
-  60% {
-    -o-transform: scale(0.4);
-  }
-}
-
-@-ms-keyframes cssload-heartL {
-  60% {
-    -ms-transform: scale(0.4);
-  }
-}
-
 @-webkit-keyframes cssload-heartL {
-  60% {
-    -webkit-transform: scale(0.4);
-  }
-}
-
-@-moz-keyframes cssload-heartL {
-  60% {
-    -moz-transform: scale(0.4);
-  }
+  60% { -webkit-transform: scale(0.4) translate(-28px, -27px); }
 }
 
 @keyframes cssload-heartR {
-  40% {
-    transform: scale(0.4);
-  }
+  40% { transform: scale(0.4) translate(28px, -27px); }
 }
-
-@-o-keyframes cssload-heartR {
-  40% {
-    -o-transform: scale(0.4);
-  }
-}
-
-@-ms-keyframes cssload-heartR {
-  40% {
-    -ms-transform: scale(0.4);
-  }
-}
-
 @-webkit-keyframes cssload-heartR {
-  40% {
-    -webkit-transform: scale(0.4);
-  }
-}
-
-@-moz-keyframes cssload-heartR {
-  40% {
-    -moz-transform: scale(0.4);
-  }
+  40% { -webkit-transform: scale(0.4) translate(28px, -27px); }
 }
 
 @keyframes cssload-shadow {
-  50% {
-    transform: scale(0.5);
-    border-color: rgb(228, 228, 228);
-  }
+  50% { transform: scale(0.5); border-color: rgba(255, 220, 230, 0.4); }
 }
-
-@-o-keyframes cssload-shadow {
-  50% {
-    -o-transform: scale(0.5);
-    border-color: rgb(228, 228, 228);
-  }
-}
-
-@-ms-keyframes cssload-shadow {
-  50% {
-    -ms-transform: scale(0.5);
-    border-color: rgb(228, 228, 228);
-  }
-}
-
 @-webkit-keyframes cssload-shadow {
-  50% {
-    -webkit-transform: scale(0.5);
-    border-color: rgb(228, 228, 228);
-  }
-}
-
-@-moz-keyframes cssload-shadow {
-  50% {
-    -moz-transform: scale(0.5);
-    border-color: rgb(228, 228, 228);
-  }
+  50% { -webkit-transform: scale(0.5); border-color: rgba(255, 220, 230, 0.4); }
 }
